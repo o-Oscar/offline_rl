@@ -11,8 +11,9 @@ class FCNN(nn.Module):
         self.linears = nn.ModuleList(
             [nn.Linear(inp, out) for inp, out in zip(self.sizes[:-1], self.sizes[1:])]
         )
+        self.activation = nn.ReLU()
 
     def forward(self, x):
         for i, l in enumerate(self.linears):
-            x = nn.ReLU(l(x))
+            x = self.activation(l(x))
         return x

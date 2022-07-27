@@ -7,11 +7,15 @@ def one_dim_wrapper(base):
         x, y = base(n)
         return np.expand_dims(x, axis=1), np.expand_dims(y, axis=1)
 
+    return wrapped
+
 
 def torch_wrapper(base):
     def wrapped(n):
         x, y = base(n)
-        return th.Tensor(x, axis=1), th.Tensor(y, axis=1)
+        return th.Tensor(x), th.Tensor(y)
+
+    return wrapped
 
 
 def linear(n):

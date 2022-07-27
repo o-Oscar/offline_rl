@@ -13,22 +13,15 @@ class MixtureDensityHead(nn.Module):
         self.num_gaussian = num_gaussian
         self.output_size = output_size
         self.output_shape = self.input_shape[:-1] + (
-            self.output_size,
             self.num_gaussian,
+            self.output_size,
         )
 
-        self.pi_linear = nn.Linear(
-            self.input_shape[-1], self.num_gaussian * self.output_size
-        )
-        self.sigma_linear = nn.Linear(
-            self.input_shape[-1], self.num_gaussian * self.output_size
-        )
+        self.pi_linear = nn.Linear(self.input_shape[-1], self.num_gaussian)
+        self.sigma_linear = nn.Linear(self.input_shape[-1], self.num_gaussian)
         self.mu_linear = nn.Linear(
             self.input_shape[-1], self.num_gaussian * self.output_size
         )
-
-    def apply_view(self, x: th.Tensor):
-        return x.view(self.output_shape)
 
     def forward(self, x: th.Tensor):
         """
@@ -36,37 +29,54 @@ class MixtureDensityHead(nn.Module):
 
         returns : (*, output_size, num_gaussian)
         """
-        pi = self.pi_linear(x).view(self.output_shape)
-        sigma = nn.ELU()(self.sigma_linear(x).view(self.output_shape)) + 1 + 1e-15
+        pi = self.pi_linear(x)
+        sigma = nn.ELU()(self.sigma_linear(x)) + 1 + 1e-15
         mu = self.mu_linear(x).view(self.output_shape)
         return pi, sigma, mu
 
-    def density(self, pi, sigma, mu, t):
+    def compute_density(
+        self, pi: th.Tensor, sigma: th.Tensor, mu: th.Tensor, t: th.Tensor
+    ):
         """
-        a : (*, output_size, num_gaussian)
-        sigma : (*, output_size, num_gaussian)
-        mu : (*, output_size, num_gaussian)
+        pi : (*, num_gaussian)
+        sigma : (*, num_gaussian)
+        mu : (*, num_gaussian, output_size)
         t : (*, output_size)
 
         returns : (*, )
         """
-        t = th.unsqueeze(t, 1)
-        a = th.softmax(pi)
-        compound = (
-            a * ONEOVERSQRT2PI / sigma * th.exp(-0.5 * th.square((t - mu) / sigma))
-        )
+        t = th.unsqueeze(t, -2)
+
+        a = pi.softmax(dim=-1)
+        dists = th.sum(th.square((t - mu)), axis=-1)
+        log_exponential = -0.5 * dists / sigma
+
+        compound = a * ONEOVERSQRT2PI / sigma * th.exp(log_exponential)
         return th.sum(compound, dim=-1)
 
-    def log_density(self, a, sigma, mu, t):
+    def compute_log_density(
+        self, pi: th.Tensor, sigma: th.Tensor, mu: th.Tensor, t: th.Tensor
+    ):
         """
-        a : (*, output_size, num_gaussian)
-        sigma : (*, output_size, num_gaussian)
-        mu : (*, output_size, num_gaussian)
+        pi : (*, num_gaussian)
+        sigma : (*, num_gaussian)
+        mu : (*, num_gaussian, output_size)
         t : (*, output_size)
 
         returns : (*, )
         """
+        t = th.unsqueeze(t, -1)
+
         log_frac = th.log(ONEOVERSQRT2PI / sigma)
-        log_exponential = -0.5 * th.square((t - mu) / sigma)
-        log_mix = a - th.logsumexp(a, dim=-1, keepdim=True)
+        dists = th.sum(th.square((t - mu)), axis=-1)
+        log_exponential = -0.5 * dists / sigma
+        log_mix = pi - th.logsumexp(pi, keepdims=True, dim=-1)
         return th.logsumexp(log_frac + log_exponential + log_mix, dim=-1)
+
+    def density(self, x: th.Tensor, target: th.Tensor):
+        pi, sigma, mu = self(x)
+        return self.compute_density(pi, sigma, mu, target)
+
+    def log_density(self, x: th.Tensor, target: th.Tensor):
+        pi, sigma, mu = self(x)
+        return self.compute_log_density(pi, sigma, mu, target)
