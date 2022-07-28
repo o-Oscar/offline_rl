@@ -36,10 +36,10 @@ def curve_simple(n):
     x = np.linspace(-10, 10, num=n)
     epsilon = np.random.normal(size=n)
     y = x**2 + epsilon * np.abs(x)
-    return x / 10, y
+    return x / 10, y / 100
 
 
-curve = curve_simple
+curve = curve_hard
 
 
 def cross(n):
