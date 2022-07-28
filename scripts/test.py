@@ -1,3 +1,4 @@
+import gym_minigrid
 import matplotlib.pyplot as plt
 import numpy as np
 
