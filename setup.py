@@ -1,6 +1,6 @@
 import setuptools
 
-requirements = ["matplotlib", "numpy", "torch"]
+requirements = ["matplotlib", "numpy"]
 
 setuptools.setup(
     name="offline_rl",
