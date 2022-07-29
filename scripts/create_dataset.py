@@ -6,8 +6,9 @@ import gym.spaces
 import gym_minigrid
 import numpy as np
 from gym_minigrid.wrappers import *
-from offline_rl.utils.dataset.formating import one_hot_to_map
-from tqdm import tqdm
+from offline_rl.utils.dataset.rl_dataset.formating import one_hot_to_string
+
+# from tqdm import tqdm
 
 
 class CustomWrapper(gym.ObservationWrapper):
@@ -78,7 +79,8 @@ all_states = np.zeros(
 all_actions = np.zeros((rollout_nb, env.max_steps), dtype=np.int32)
 all_rewards = np.zeros((rollout_nb, env.max_steps), dtype=np.float32)
 
-for rollout_id in tqdm(range(rollout_nb)):
+for rollout_id in range(rollout_nb):
+    # for rollout_id in tqdm(range(rollout_nb)):
     states, actions, rewards = rollout(env, env.max_steps)
     rollout_len = actions.shape[0]
 
@@ -90,4 +92,4 @@ for rollout_id in tqdm(range(rollout_nb)):
 np.save(save_path / "all_lengths.npy", all_lengths)
 np.save(save_path / "all_states.npy", all_states)
 np.save(save_path / "all_actions.npy", all_actions)
-np.save(save_path / "all_rewards.npy", all_actions)
+np.save(save_path / "all_rewards.npy", all_rewards)

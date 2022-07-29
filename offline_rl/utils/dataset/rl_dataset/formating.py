@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def one_hot_to_map(onehot: np.ndarray):
+def one_hot_to_string(onehot: np.ndarray):
     to_print = ""
     for col in onehot.transpose((1, 0, 2)):
         for cell in col:
@@ -20,4 +20,4 @@ def one_hot_to_map(onehot: np.ndarray):
             else:
                 to_print += " "
         to_print += "\n"
-    return to_print
+    return to_print[:-1]
