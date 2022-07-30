@@ -16,7 +16,7 @@ class SimpleMDN(BaseModel):
                 -1,
                 self.backbone.sizes[-1],
             ),
-            4,
+            30,
             output_size,
         )
 
@@ -40,38 +40,50 @@ class SimpleMDN(BaseModel):
 class ConvMDN(BaseModel):
     def __init__(self, input_size: tuple, output_size: int):
         super().__init__()
-        
+
         cnn_layers = 2
         assert input_size[0] % (2**cnn_layers) == 0
         assert input_size[1] % (2**cnn_layers) == 0
 
-        self.cnn = CNN2d([input_size[-1], 5, 5])
+        self.cnn = CNN2d([input_size[-1], 16, 16], [3, 3])
 
-        cnn_out_size = input_size[0] //(2**cnn_layers)* input_size[1] //(2**cnn_layers) * self.cnn.channel_sizes[-1]
+        cnn_out_size = (
+            input_size[0]
+            // (2**cnn_layers)
+            * input_size[1]
+            // (2**cnn_layers)
+            * self.cnn.channel_sizes[-1]
+        )
 
-        self.
+        self.fcnn = FCNN((cnn_out_size, 128))
 
         self.head = MixtureDensityHead(
             (
                 -1,
-                self.backbone.,
+                self.fcnn.sizes[-1],
             ),
-            4,
+            30,
             output_size,
         )
 
     def forward(self, x: th.Tensor):
-        features = self.backbone(x)
-        return self.head(features)
+        conv_features = th.flatten(self.cnn(x), 1)
+        print(conv_features.shape)
+        flat_features = self.fcnn(conv_features)
+        print(flat_features.shape)
+        return self.head(flat_features)
 
     def density(self, x: th.Tensor, target: th.Tensor):
-        features = self.backbone(x)
-        return self.head.density(features, target)
+        conv_features = th.flatten(self.cnn(x), 1)
+        flat_features = self.fcnn(conv_features)
+        return self.head.density(flat_features, target)
 
     def log_density(self, x: th.Tensor, target: th.Tensor):
-        features = self.backbone(x)
-        return self.head.log_density(features, target)
+        conv_features = th.flatten(self.cnn(x), 1)
+        flat_features = self.fcnn(conv_features)
+        return self.head.log_density(flat_features, target)
 
     def standard_dist(self, x: th.Tensor):
-        features = self.backbone(x)
-        return self.head.standard_dist(features)
+        conv_features = th.flatten(self.cnn(x), 1)
+        flat_features = self.fcnn(conv_features)
+        return self.head.standard_dist(flat_features)

@@ -3,7 +3,28 @@ import json
 from pathlib import Path
 
 import numpy as np
-from offline_rl.utils.dataset.rl_dataset.formating import one_hot_to_string
+
+
+def one_hot_to_string(onehot: np.ndarray):
+    to_print = ""
+    for col in onehot.transpose((1, 0, 2)):
+        for cell in col:
+            if cell[0] == 1:
+                to_print += ">"
+            elif cell[1] == 1:
+                to_print += "V"
+            elif cell[2] == 1:
+                to_print += "<"
+            elif cell[3] == 1:
+                to_print += "^"
+            elif cell[4] == 1:
+                to_print += "W"
+            elif cell[5] == 1:
+                to_print += "G"
+            else:
+                to_print += " "
+        to_print += "\n"
+    return to_print[:-1]
 
 
 @dataclasses.dataclass
@@ -30,7 +51,6 @@ class Dataset:
                 self.all_states[rollout_idx, self.all_lengths[rollout_idx]]
             )
         )
-        print(self.all_rewards[rollout_idx])
         print("rollout len :", self.all_lengths[rollout_idx])
 
     def __str__(self) -> str:
@@ -41,6 +61,26 @@ class Dataset:
         to_return += "   actions shape : " + str(self.all_actions.shape[0])
         to_return += "   rewards shape : " + str(self.all_rewards.shape[0])
         return to_return
+
+    def __len__(self):
+        return np.sum(self.all_lengths)
+
+    def generate_rollout_reward_dataset(self):
+        dataset_states = np.zeros((len(self),) + self.all_states.shape[2:])
+        dataset_cum_rewards = np.zeros((len(self),))
+        dataset_len = 0
+        for rollout_id in range(self.all_states.shape[0]):
+            rollout_len = self.all_lengths[rollout_id]
+            rollout_states = self.all_states[rollout_id]
+            rollout_rewards = self.all_rewards[rollout_id, :rollout_len]
+
+            lid = dataset_len
+            hid = dataset_len + rollout_len
+            dataset_states[lid:hid] = rollout_states[:rollout_len]
+            dataset_cum_rewards[lid:hid] = np.cumsum(rollout_rewards[::-1], 0)[::-1]
+
+            dataset_len += rollout_len
+        return dataset_states, dataset_cum_rewards.reshape((-1, 1))
 
 
 def load_dataset(save_path: Path):

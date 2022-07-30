@@ -6,7 +6,7 @@ import gym.spaces
 import gym_minigrid
 import numpy as np
 from gym_minigrid.wrappers import *
-from offline_rl.utils.dataset.rl_dataset.formating import one_hot_to_string
+from offline_rl.dataset import one_hot_to_string
 
 # from tqdm import tqdm
 

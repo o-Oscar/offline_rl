@@ -8,6 +8,7 @@ pip install -e .
 
 pip install torch
 pip install black
+pip install scipy
 
 git clone https://github.com/saleml/gym-minigrid.git
 cd gym-minigrid

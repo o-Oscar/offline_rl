@@ -34,6 +34,10 @@ class MixtureDensityHead(nn.Module):
             self.input_size, self.num_gaussian * self.output_size
         )
 
+        self.bias = th.Tensor(
+            np.linspace(0, 1, self.num_gaussian).reshape(1, self.num_gaussian, 1)
+        )
+
     def forward(self, x: th.Tensor):
         """
         x : (*, input_size)
@@ -41,8 +45,10 @@ class MixtureDensityHead(nn.Module):
         returns : (*, output_size, num_gaussian)
         """
         pi = self.pi_linear(x)
-        sigma = nn.ELU()(self.sigma_linear(x)) + 1 + 1e-15
-        mu = self.mu_linear(x).view(self.output_shape)
+        # sigma = nn.ELU()(self.sigma_linear(x)) + 1 + 1e-15
+        # sigma = th.sigmoid(self.sigma_linear(x)) + 1e-2
+        sigma = th.sigmoid(self.sigma_linear(x)) * 0 + 1 / self.num_gaussian
+        mu = self.mu_linear(x).view(self.output_shape) * 0 + self.bias
         return pi, sigma, mu
 
     def compute_density(
@@ -78,6 +84,7 @@ class MixtureDensityHead(nn.Module):
         """
         t = th.unsqueeze(t, -1)
 
+        # sigma = sigma.detach()
         log_frac = th.log(ONEOVERSQRT2PI / sigma)
         dists = th.sum(th.square((t - mu)), axis=-1)
         log_exponential = -0.5 * dists / th.square(sigma)
@@ -139,9 +146,9 @@ class MixtureDensityHead(nn.Module):
 
         returns : (*, )
         """
-        xs = sigma
-        fs = th.log(xs) + 0.5 * 1 / th.square(xs)
-        fs = fs * (1 - pi.softmax(dim=-1))
+        xs = sigma / 0.3
+        fs = th.log(xs) + 0.5 / th.square(xs)
+        fs = fs  # * (1 - pi.softmax(dim=-1))
         return th.sum(fs, dim=(-1))
 
     def density(self, x: th.Tensor, target: th.Tensor):

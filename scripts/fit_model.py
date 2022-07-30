@@ -4,7 +4,7 @@ from re import A
 import matplotlib.pyplot as plt
 import numpy as np
 import torch as th
-from offline_rl.model.mdn.simple_model import SimpleMDN
+from offline_rl.model import SimpleMDN
 from offline_rl.utils.dataset.synthetic import (
     cross,
     curve,

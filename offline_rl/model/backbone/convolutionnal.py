@@ -11,7 +11,7 @@ class CNN2d(nn.Module):
         self.kernel_sizes = kernel_sizes
         self.convs = nn.ModuleList(
             [
-                nn.Conv2d(in_size, out_size, kernel_size)
+                nn.Conv2d(in_size, out_size, kernel_size, padding="same")
                 for in_size, out_size, kernel_size in zip(
                     channel_sizes[:-1], channel_sizes[1:], kernel_sizes
                 )
@@ -20,7 +20,9 @@ class CNN2d(nn.Module):
         self.pool = nn.MaxPool2d(2, 2)
         self.activation = nn.ReLU()
 
-    def forward(self, x):
-        for i, l in enumerate(self.linears):
+    def forward(self, x: th.Tensor):
+        x = x.transpose(-3, -1)
+        for i, l in enumerate(self.convs):
             x = self.pool(self.activation(l(x)))
+        x = x.transpose(-3, -1)
         return x
