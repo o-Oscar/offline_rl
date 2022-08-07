@@ -19,6 +19,8 @@ class DiffusionNet(BaseModel):
         self.sigmas = self.betas
         self.sigmas = self.betas_tilde
 
+        self.predicts_x0 = True
+
     def loss(self, x0s: th.Tensor):
         t = np.random.randint(self.diffusion_steps, dtype=np.int32)
         return self.loss_t(x0s, t)
@@ -33,10 +35,7 @@ class DiffusionNet(BaseModel):
         xts = x_fac * x0s + epsilon_fac * epsilon_th
 
         output = self(xts, t / self.diffusion_steps, self.alphas_bar[t])
-        # output = self.calc_x0(xts, t / self.diffusion_steps, self.alphas_bar[t])
         target = epsilon_fac * epsilon_th
-        # target = epsilon_th
-        # target = x0s
 
         return th.mean(th.square(output - target))
 
@@ -160,7 +159,7 @@ class SimpleResNet(nn.Module):
 
         sample_channels = 7
         in_channels = sample_channels + 8 + 16  # + 16  # 8 + 16
-        compute_channels = 64
+        compute_channels = 32
 
         self.layer_0 = nn.Conv2d(
             in_channels,
