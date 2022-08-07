@@ -14,7 +14,7 @@ from offline_rl.dataset import one_hot_to_string
 class CustomWrapper(gym.ObservationWrapper):
     def __init__(self, env):
         super().__init__(env)
-        self.shape = (self.env.width, self.env.height, 6)
+        self.shape = (self.env.width, self.env.height, 7)
         self.observation_space = gym.spaces.Box(
             np.zeros(self.shape), np.ones(self.shape)
         )
@@ -31,6 +31,7 @@ class CustomWrapper(gym.ObservationWrapper):
         for goal in zip(*goals):
             to_return[goal + (5,)] = 1
 
+        to_return[:,:,-1] = 1- np.sum(to_return, axis=-1)
         return to_return
 
 

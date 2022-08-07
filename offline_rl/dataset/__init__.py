@@ -7,7 +7,7 @@ import numpy as np
 
 def one_hot_to_string(onehot: np.ndarray):
     to_print = ""
-    for col in onehot.transpose((1, 0, 2)):
+    for col in onehot.transpose((2, 1, 0)):
         for cell in col:
             if cell[0] == 1:
                 to_print += ">"
@@ -66,8 +66,10 @@ class Dataset:
         return np.sum(self.all_lengths)
 
     def generate_rollout_reward_dataset(self):
-        dataset_states = np.zeros((len(self),) + self.all_states.shape[2:])
-        dataset_cum_rewards = np.zeros((len(self),))
+        dataset_states = np.zeros(
+            (len(self),) + self.all_states.shape[2:], dtype=np.float32
+        )
+        dataset_cum_rewards = np.zeros((len(self),), dtype=np.float32)
         dataset_len = 0
         for rollout_id in range(self.all_states.shape[0]):
             rollout_len = self.all_lengths[rollout_id]
