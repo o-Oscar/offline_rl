@@ -8,7 +8,7 @@ all_logger_path = list(logs_path.glob("*"))
 all_logger_path = sorted(all_logger_path)
 
 # change here what you want to select
-all_logger_path = [all_logger_path[0], all_logger_path[-1]]
+all_logger_path = [all_logger_path[0], all_logger_path[-2], all_logger_path[-1]]
 
 
 all_loggers = []

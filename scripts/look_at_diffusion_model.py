@@ -14,31 +14,50 @@ def board_from_latent(latent):
     return to_return
 
 
+def count_players(latent):
+    return np.sum(latent[:4])
+
+
 if True:
 
-    save_path = Path("results/models/diffusion_0000")
+    save_path = Path("results/models/diffusion_0005")
     save_path.mkdir(exist_ok=True, parents=True)
 
     model = DiffusionResNet()
     model.load(save_path / "model_9")
 
     with th.no_grad():
-        latents = model.generate(1000).detach().cpu().numpy()
+        latents = model.generate_ddim(1000).detach().cpu().numpy()
 
-    for latent in latents[:10]:
+    for latent in latents[:100]:
         print(one_hot_to_string(board_from_latent(latent)))
         print(latent[:, 1, 1])
         print()
 
-    for i in [0, 1]:
-        plt.figure()
-        plt.hist(latents[:, 0, i, i], bins=20)
-        plt.figure()
-        plt.hist(latents[:, 1, i, i], bins=20)
+    n_higher = len(
+        [0 for latent in latents if count_players(board_from_latent(latent)) > 1]
+    )
+    high_precent = int(np.ceil(100 * n_higher / len(latents)))
+    n_lower = len(
+        [0 for latent in latents if count_players(board_from_latent(latent)) < 1]
+    )
+    low_precent = int(np.ceil(100 * n_lower / len(latents)))
+    total_precent = int(np.ceil(100 * (n_lower + n_higher) / len(latents)))
 
-        plt.figure()
-        xs = latents[:, 0, i, i]
-        ys = latents[:, 1, i, i]
-        plt.plot(xs, ys, ".")
+    print("too much players : {} ({}%)".format(n_higher, high_precent))
+    print("too few players : {} ({}%)".format(n_higher, low_precent))
+    print("total : {}%".format(total_precent))
+    print()
 
-    plt.show()
+    # for i in [0, 1]:
+    #     plt.figure()
+    #     plt.hist(latents[:, 0, i, i], bins=20)
+    #     plt.figure()
+    #     plt.hist(latents[:, 1, i, i], bins=20)
+
+    #     plt.figure()
+    #     xs = latents[:, 0, i, i]
+    #     ys = latents[:, 1, i, i]
+    #     plt.plot(xs, ys, ".")
+
+    # plt.show()

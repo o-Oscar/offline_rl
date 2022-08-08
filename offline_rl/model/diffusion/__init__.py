@@ -60,6 +60,29 @@ class DiffusionNet(BaseModel):
             xts_th = x_fac * (xts_th - epsilon_fac * epsilon) + self.sigmas[t] * z
         return xts_th
 
+    def generate_ddim(self, batch_size: int):
+        xts = np.random.normal(size=(batch_size,) + self.sample_shape)
+        xts_th = th.Tensor(xts)
+        used_tm1 = list(reversed(range(0, self.diffusion_steps, 10)))
+        # used_t = [self.diffusion_steps] + used_tm1[:-1]
+        used_t = used_tm1[:-1]
+        used_tm1 = used_tm1[1:]
+        for tm1, t in zip(used_tm1, used_t):
+            print(t)
+            # epsilon = self(xts_th, 0.1)
+            epsilon = self(
+                xts_th, t / self.diffusion_steps, self.alphas_bar[t]
+            ) / np.sqrt(1 - self.alphas_bar[t])
+
+            pred_x_0 = (xts_th - np.sqrt(1 - self.alphas_bar[t]) * epsilon) / np.sqrt(
+                self.alphas_bar[t]
+            )
+
+            dir_to_xt = np.sqrt(1 - self.alphas_bar[tm1]) * epsilon
+
+            xts_th = np.sqrt(self.alphas_bar[tm1]) * pred_x_0 + dir_to_xt
+        return xts_th
+
     def generate_partial(
         self, x0s: np.ndarray, diffusion_steps: int
     ):  # Not working properly
@@ -99,9 +122,11 @@ class DiffusionResNet(DiffusionNet):
     def __init__(self):
         super().__init__()
 
-        self.resnet = SimpleResNet()
+        # self.resnet = SimpleResNet()
+        self.resnet = FullResNet()
 
-        self.sample_shape = (7, 3, 3)
+        # self.sample_shape = (7, 3, 3)
+        self.sample_shape = (7, 8, 8)
         self.output_shape = (1,) + self.sample_shape
         self.feature_shape = (1, 1) + self.sample_shape[1:]
 
@@ -159,19 +184,20 @@ class SimpleResNet(nn.Module):
 
         sample_channels = 7
         in_channels = sample_channels + 8 + 16  # + 16  # 8 + 16
-        compute_channels = 32
+        compute_channels = 64
+        kernel_size = 3
 
         self.layer_0 = nn.Conv2d(
             in_channels,
             compute_channels,
-            1,
+            kernel_size,
             padding="same",
             padding_mode="reflect",
         )
         self.layer_1 = nn.Conv2d(
             in_channels + compute_channels,
             compute_channels,
-            1,
+            kernel_size,
             padding="same",
             padding_mode="reflect",
         )
@@ -185,7 +211,7 @@ class SimpleResNet(nn.Module):
         self.layer_2 = nn.Conv2d(
             in_channels + compute_channels,
             sample_channels,
-            1,
+            kernel_size,
             padding="same",
             padding_mode="reflect",
         )
@@ -199,5 +225,62 @@ class SimpleResNet(nn.Module):
         # x = th.relu(self.layer_11(x))
         # x = th.concat([x, inp], axis=1)
         x = self.layer_2(x)
+
+        return x
+
+
+class FullResNet(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+        sample_channels = 7
+        in_channels = sample_channels + 8 + 16  # + 16  # 8 + 16
+        compute_channels = 64
+        kernel_size = 3
+
+        self.layer_0 = nn.Conv2d(
+            in_channels,
+            compute_channels,
+            kernel_size,
+            padding="same",
+            padding_mode="reflect",
+        )
+        self.compute_layers = nn.ModuleList(
+            [
+                nn.Conv2d(
+                    in_channels + compute_channels,
+                    compute_channels,
+                    kernel_size,
+                    padding="same",
+                    padding_mode="reflect",
+                )
+                for i in range(10)
+            ]
+        )
+        # self.layer_11 = nn.Conv2d(
+        #     in_channels + compute_channels,
+        #     compute_channels,
+        #     1,
+        #     padding="same",
+        #     padding_mode="reflect",
+        # )
+        self.out_layer = nn.Conv2d(
+            in_channels + compute_channels,
+            sample_channels,
+            kernel_size,
+            padding="same",
+            padding_mode="reflect",
+        )
+
+    def forward(self, x):
+        inp = x
+        x = th.relu(self.layer_0(x))
+
+        for layer in self.compute_layers:
+            x = th.concat([x, inp], axis=1)
+            x = th.relu(layer(x))
+
+        x = th.concat([x, inp], axis=1)
+        x = self.out_layer(x)
 
         return x

@@ -12,7 +12,7 @@ from offline_rl.utils.logger import Logger
 
 if True:
 
-    model_nb = 0
+    model_nb = 5
     model_name = "{:04d}".format(model_nb)
 
     save_path = Path("results/models/diffusion_" + str(model_name))
@@ -31,18 +31,20 @@ if True:
     logger = Logger(
         logger_path,
         "res_net " + str(model_name),
-        "cnn, 3 layers, 32 channels",
+        "cnn, 10 layers, 16 channels, 3 kernel size",
         save=True,
     )
 
-    x0s, _ = ds.generate_rollout_reward_dataset()
-    ds.plot_rollout(0)
-    x0s = x0s[:, :, 0:3, 0:3]
+    # x0s, _ = ds.generate_rollout_reward_dataset()
+    x0s = ds.generate_all_states_dataset()
+    # x0s = x0s[:, :, 0:3, 0:3]
     # x0s = np.transpose(x0s, axes=(0, 3, 2, 1))
     # x0s = np.stack([x0s[0], x0s[1], x0s[3], x0s[4]], axis=0)
-    exit()
-    x0s = np.concatenate([x0s], axis=0)
+    # ds.plot_rollout(0)
+    # exit()
+    # x0s = np.concatenate([x0s], axis=0)
     x0s = th.Tensor(x0s)
+    print(x0s.shape)
 
     all_losses = []
 
@@ -50,8 +52,13 @@ if True:
     n_epoch = 100000
     steps = n_epoch // 10
 
+    batch_size = 4
+
     for epoch in range(n_epoch):
-        loss = model.loss(x0s)
+        batch_idx = np.random.randint(x0s.shape[0], size=(batch_size,))
+        train_x0s = x0s[batch_idx]
+
+        loss = model.loss(train_x0s)
 
         full_loss = loss
 

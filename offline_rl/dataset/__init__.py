@@ -86,6 +86,23 @@ class Dataset:
             dataset_len += rollout_len
         return dataset_states, dataset_cum_rewards.reshape((-1, 1))
 
+    def generate_all_states_dataset(self):
+        n_states = np.sum(self.all_lengths + 1)
+        dataset_states = np.zeros(
+            (n_states,) + self.all_states.shape[2:], dtype=np.float32
+        )
+        dataset_len = 0
+        for rollout_id in range(self.all_states.shape[0]):
+            rollout_len = self.all_lengths[rollout_id]
+            rollout_states = self.all_states[rollout_id]
+
+            lid = dataset_len
+            hid = dataset_len + rollout_len + 1
+            dataset_states[lid:hid] = rollout_states[: rollout_len + 1]
+
+            dataset_len += rollout_len
+        return dataset_states
+
 
 def load_dataset(save_path: Path):
     with open(save_path / "metadata.json", "r") as f:
