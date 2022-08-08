@@ -24,7 +24,7 @@ if True:
     optimizer = th.optim.Adam(model.parameters(), lr=2e-4)
 
     # create dataset
-    dataset_path = Path("results/dataset/dataset_0")
+    dataset_path = Path("results/dataset/test_dataset_6")
     ds = load_dataset(dataset_path)
 
     logger_path = Path("results/loggers/logger_" + str(model_name))
@@ -36,9 +36,11 @@ if True:
     )
 
     x0s, _ = ds.generate_rollout_reward_dataset()
-    x0s = x0s[:, 0:3, 0:3, :]
-    x0s = np.transpose(x0s, axes=(0, 3, 2, 1))
-    x0s = np.stack([x0s[0], x0s[1], x0s[3], x0s[4]], axis=0)
+    ds.plot_rollout(0)
+    x0s = x0s[:, :, 0:3, 0:3]
+    # x0s = np.transpose(x0s, axes=(0, 3, 2, 1))
+    # x0s = np.stack([x0s[0], x0s[1], x0s[3], x0s[4]], axis=0)
+    exit()
     x0s = np.concatenate([x0s], axis=0)
     x0s = th.Tensor(x0s)
 

@@ -14,24 +14,30 @@ from offline_rl.dataset import one_hot_to_string
 class CustomWrapper(gym.ObservationWrapper):
     def __init__(self, env):
         super().__init__(env)
-        self.shape = (self.env.width, self.env.height, 7)
+        self.shape = (7, self.env.width, self.env.height)
         self.observation_space = gym.spaces.Box(
             np.zeros(self.shape), np.ones(self.shape)
         )
 
     def observation(self, obs):
         to_return = np.zeros(self.shape)
-        to_return[self.env.agent_pos[0], self.env.agent_pos[1], self.env.agent_dir] = 1
 
+        # adding the agent
+        to_return[self.env.agent_dir, self.env.agent_pos[0], self.env.agent_pos[1]] = 1
+
+        # adding the walls
         walls = np.where(obs["image"][:, :, 0] == 2)
         for wall in zip(*walls):
-            to_return[wall + (4,)] = 1
+            to_return[(4,) + wall] = 1
 
+        # adding the goals
         goals = np.where(obs["image"][:, :, 0] == 8)
         for goal in zip(*goals):
-            to_return[goal + (5,)] = 1
+            to_return[(5,) + goal] = 1
 
-        to_return[:,:,-1] = 1- np.sum(to_return, axis=-1)
+        # adding the empty squares
+        to_return[-1] = 1 - np.sum(to_return, axis=0)
+
         return to_return
 
 

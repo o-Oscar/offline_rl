@@ -23,6 +23,8 @@ def one_hot_to_string(onehot: np.ndarray):
                 to_print += "G"
             else:
                 to_print += " "
+            to_print += " "
+
         to_print += "\n"
     return to_print[:-1]
 
