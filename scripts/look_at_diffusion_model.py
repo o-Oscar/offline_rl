@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch as th
 from offline_rl.dataset import Dataset, load_dataset, one_hot_to_string
-from offline_rl.model.diffusion import DiffusionFCNN, DiffusionResNet
+from offline_rl.model.diffusion.convnet import DiffusionConvNet
 
 
 def board_from_latent(latent):
@@ -23,7 +23,7 @@ if True:
     save_path = Path("results/models/diffusion_0005")
     save_path.mkdir(exist_ok=True, parents=True)
 
-    model = DiffusionResNet()
+    model = DiffusionConvNet()
     model.load(save_path / "model_9")
 
     with th.no_grad():
