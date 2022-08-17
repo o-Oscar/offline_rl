@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch as th
 from offline_rl.dataset import Dataset, load_dataset, one_hot_to_string
+from offline_rl.model.diffusion.attention import DiffusionAttentionNet
 from offline_rl.model.diffusion.convnet import DiffusionConvNet
 
 
@@ -20,10 +21,11 @@ def count_players(latent):
 
 if True:
 
-    save_path = Path("results/models/diffusion_0005")
+    save_path = Path("results/models/diffusion_0007")
     save_path.mkdir(exist_ok=True, parents=True)
 
-    model = DiffusionConvNet()
+    # model = DiffusionConvNet()
+    model = DiffusionAttentionNet()
     model.load(save_path / "model_9")
 
     with th.no_grad():
@@ -45,7 +47,7 @@ if True:
     total_precent = int(np.ceil(100 * (n_lower + n_higher) / len(latents)))
 
     print("too much players : {} ({}%)".format(n_higher, high_precent))
-    print("too few players : {} ({}%)".format(n_higher, low_precent))
+    print("too few players : {} ({}%)".format(n_lower, low_precent))
     print("total : {}%".format(total_precent))
     print()
 

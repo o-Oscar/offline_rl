@@ -13,7 +13,7 @@ from offline_rl.utils.logger import Logger
 
 if True:
 
-    model_nb = 6
+    model_nb = 7
     model_name = "{:04d}".format(model_nb)
 
     save_path = Path("results/models/diffusion_" + str(model_name))
@@ -32,8 +32,8 @@ if True:
     logger_path = Path("results/loggers/logger_" + str(model_name))
     logger = Logger(
         logger_path,
-        "res_net " + str(model_name),
-        "cnn, 10 layers, 16 channels, 3 kernel size",
+        "attention_net " + str(model_name),
+        "cnn, 3 layers, 16 channels, 4 heads",
         save=True,
     )
 

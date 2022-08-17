@@ -1,3 +1,5 @@
+from turtle import forward
+
 import numpy as np
 import torch as th
 import torch.nn as nn
@@ -52,6 +54,29 @@ def get_feed_forward(dim_input: int = 512, dim_feedforward: int = 2048) -> nn.Mo
     )
 
 
+class CustomMultiheadAttention(nn.MultiheadAttention):
+    def forward(
+        self,
+        query,
+        key,
+        value,
+        key_padding_mask=None,
+        need_weights=False,
+        attn_mask=None,
+        average_attn_weights=True,
+    ):
+        to_return = super().forward(
+            query,
+            key,
+            value,
+            key_padding_mask=key_padding_mask,
+            need_weights=need_weights,
+            attn_mask=attn_mask,
+            average_attn_weights=average_attn_weights,
+        )
+        return to_return[0]
+
+
 class Residual(nn.Module):
     def __init__(self, sublayer: nn.Module, dimension: int, dropout: float = 0.0):
         super().__init__()
@@ -70,11 +95,13 @@ class TransformerBlock(nn.Module):
         self.compute_dims = compute_dims
 
         num_heads = 4
-        attention = nn.MultiheadAttention(self.compute_dims, num_heads)
-        self.attention = Residual(attention, self.compute_dims * 2)
+        attention = CustomMultiheadAttention(
+            self.compute_dims, num_heads, batch_first=True
+        )
+        self.attention = Residual(attention, self.compute_dims)
 
         feed_forward = get_feed_forward(self.compute_dims, self.compute_dims * 4)
-        self.feed_forward = Residual(feed_forward, self.compute_dims * 2)
+        self.feed_forward = Residual(feed_forward, self.compute_dims)
 
     def forward(self, x):
 
@@ -94,9 +121,9 @@ class AttentionNet(nn.Module):
 
         in_channels = self.input_shape[0]
         self.compute_channels = 16
-        kernel_size = 3
+        # kernel_size = 3
 
-        self.compute_shape = (self.compute_channels * input_shape[1] * input_shape[2],)
+        self.compute_shape = (self.compute_channels, input_shape[1] * input_shape[2])
 
         self.layer_0 = nn.Conv2d(
             in_channels,
@@ -106,7 +133,9 @@ class AttentionNet(nn.Module):
             padding_mode="reflect",
         )
 
-        self.attention_block = TransformerBlock(self.compute_channels)
+        self.attention_blocks = nn.ModuleList(
+            [TransformerBlock(self.compute_channels) for i in range(3)]
+        )
 
         self.layer_2 = nn.Conv2d(
             self.compute_channels,
@@ -121,7 +150,10 @@ class AttentionNet(nn.Module):
         x = self.layer_0(x)
 
         x = x.view((-1,) + self.compute_shape)
-        x = self.attention_block(x)
+        x = x.transpose(1, 2)
+        for attention_block in self.attention_blocks:
+            x = attention_block(x)
+        x = x.transpose(1, 2)
         x = x.view((-1, self.compute_channels) + self.input_shape[1:])
 
         x = self.layer_2(x)

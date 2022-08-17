@@ -35,6 +35,8 @@ class Logger:
 
         self.do_save = save
 
+        print(self.data.keys())
+
     def log(self, name, value):
         cur_time = time.time()
         if not name in self.data:
