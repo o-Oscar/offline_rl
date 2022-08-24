@@ -6,8 +6,8 @@ import numpy as np
 import torch as th
 from offline_rl.dataset import Dataset, load_dataset, one_hot_to_string
 from offline_rl.model import FCNN
-from offline_rl.model.diffusion.attention import DiffusionAttentionNet
 from offline_rl.model.diffusion.convnet import DiffusionConvNet
+from offline_rl.model.diffusion.next_step import DiffusionAttentionNet
 from offline_rl.utils.dataset.diffusion import get_diffusion_params, xor
 from offline_rl.utils.logger import Logger
 
@@ -21,7 +21,7 @@ if True:
 
     # create model
     # model = DiffusionConvNet()
-    model = DiffusionAttentionNet(7)
+    model = DiffusionAttentionNet()
     model.save(save_path / "model_init")
     optimizer = th.optim.Adam(model.parameters(), lr=2e-4)
 

@@ -109,11 +109,13 @@ class DiffusionNet(BaseModel):
             xts_th = x_fac * (xts_th - epsilon_fac * epsilon) + self.sigmas[t] * z
         return xts_th
 
-    def embed(self, t: th.Tensor, feature_nb: int, axis: int):
+    def embed(self, t: np.ndarray, feature_nb: int, axis: int):
         to_return = []
         for i in range(feature_nb):
             phase = t * np.pi * (2**i)
             to_return.append(np.sin(phase))
             to_return.append(np.cos(phase))
 
+        if np.array(t).shape == ():
+            return np.array(to_return)
         return np.concatenate(to_return, axis=axis)
