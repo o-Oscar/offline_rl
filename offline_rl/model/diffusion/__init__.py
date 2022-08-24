@@ -20,11 +20,11 @@ class DiffusionNet(BaseModel):
 
         self.predicts_x0 = True
 
-    def loss(self, x0s: th.Tensor):
+    def loss(self, x0s: th.Tensor, infos: th.Tensor = None):
         t = np.random.randint(self.diffusion_steps, dtype=np.int32)
-        return self.loss_t(x0s, t)
+        return self.loss_t(x0s, t, infos)
 
-    def loss_t(self, x0s: th.Tensor, t: int):
+    def loss_t(self, x0s: th.Tensor, t: int, infos: th.Tensor):
         epsilon = np.random.normal(size=x0s.shape)
         epsilon_th = th.Tensor(epsilon)
 
@@ -33,7 +33,7 @@ class DiffusionNet(BaseModel):
 
         xts = x_fac * x0s + epsilon_fac * epsilon_th
 
-        output = self(xts, t / self.diffusion_steps, self.alphas_bar[t])
+        output = self(xts, t / self.diffusion_steps, self.alphas_bar[t], infos)
         target = epsilon_fac * epsilon_th
 
         return th.mean(th.square(output - target))
@@ -59,7 +59,9 @@ class DiffusionNet(BaseModel):
             xts_th = x_fac * (xts_th - epsilon_fac * epsilon) + self.sigmas[t] * z
         return xts_th
 
-    def generate_ddim(self, batch_size: int, speedup_fac: int = 10):
+    def generate_ddim(
+        self, batch_size: int, speedup_fac: int = 10, infos: th.Tensor = None
+    ):
         xts = np.random.normal(size=(batch_size,) + self.sample_shape)
         xts_th = th.Tensor(xts)
         used_tm1 = list(reversed(range(0, self.diffusion_steps, speedup_fac)))
@@ -70,7 +72,7 @@ class DiffusionNet(BaseModel):
             print(t)
             # epsilon = self(xts_th, 0.1)
             epsilon = self(
-                xts_th, t / self.diffusion_steps, self.alphas_bar[t]
+                xts_th, t / self.diffusion_steps, self.alphas_bar[t], infos=infos
             ) / np.sqrt(1 - self.alphas_bar[t])
 
             pred_x_0 = (xts_th - np.sqrt(1 - self.alphas_bar[t]) * epsilon) / np.sqrt(

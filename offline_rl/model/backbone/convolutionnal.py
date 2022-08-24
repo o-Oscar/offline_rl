@@ -23,10 +23,10 @@ class CNN2d(nn.Module):
         self.activation = nn.ReLU()
 
     def forward(self, x: th.Tensor):
-        x = x.transpose(-3, -1)
+        # x = x.transpose(-3, -1)
         for i, l in enumerate(self.convs):
             x = self.pool(self.activation(l(x)))
-        x = x.transpose(-3, -1)
+        # x = x.transpose(-3, -1)
         return x
 
 
