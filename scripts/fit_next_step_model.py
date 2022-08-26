@@ -13,7 +13,7 @@ from offline_rl.utils.logger import Logger
 
 if True:
 
-    model_nb = 3
+    model_nb = 1
     model_name = "next_diffusion__{:04d}".format(model_nb)
 
     save_path = Path("results/models/" + model_name)
@@ -32,7 +32,7 @@ if True:
     logger_path = Path("results/loggers/" + model_name)
     logger = Logger(
         logger_path,
-        "attention_net " + str(model_name),
+        "res attention net " + str(model_name),
         "cnn, 3 layers, 16 channels, 4 heads",
         save=True,
     )
@@ -40,8 +40,13 @@ if True:
     # x0s, _ = ds.generate_rollout_reward_dataset()
     states, next_states = ds.generate_next_states_dataset()
     # idx = list(range(0, states.shape[0], 100))
+    # idx = [0, 100, 200, 300]
+    # idx = [0, 0, 0, 0]
     # states = states[idx]
     # next_states = next_states[idx]
+
+    states = states
+    next_states = states
 
     # print(one_hot_to_string(states[0]))
     # print(one_hot_to_string(next_states[0]))
@@ -56,12 +61,11 @@ if True:
     # x0s = np.concatenate([x0s], axis=0)
     states = th.Tensor(states)
     next_states = th.Tensor(next_states)
-    print(states.shape, next_states.shape)
 
     all_losses = []
 
     # for some epoch
-    n_epoch = 100000
+    n_epoch = 10000
     steps = n_epoch // 10
 
     batch_size = 4

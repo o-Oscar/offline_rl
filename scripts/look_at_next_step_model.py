@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch as th
 from offline_rl.dataset import Dataset, load_dataset, one_hot_to_string
-from offline_rl.model.diffusion.attention import DiffusionAttentionNet
 from offline_rl.model.diffusion.convnet import DiffusionConvNet
+from offline_rl.model.diffusion.next_step import DiffusionAttentionNet
 
 
 def board_from_latent(latent):
@@ -37,23 +37,29 @@ def create_state(x, y):
 
 if True:
 
-    model_nb = 0
+    model_nb = 1
     model_name = "next_diffusion__{:04d}".format(model_nb)
 
     save_path = Path("results/models/" + model_name)
 
     # model = DiffusionConvNet()
-    model = DiffusionAttentionNet(7)
+    model = DiffusionAttentionNet()
     model.load(save_path / "model_9")
+    print(list(model.output.parameters()))
+    print(model.output.first_perm)
+    print(model.output.second_perm)
+    exit()
 
-    # states_np = [create_state(1, 1) for i in range(100)]
-    states_np = [create_state(5, 4) for i in range(100)]
+    states_np = [create_state(1, 1) for i in range(100)]
+    # states_np = [create_state(5, 4) for i in range(100)]
     states_np = np.asarray(states_np)
     # , create_state(-3, -2)]
 
     with th.no_grad():
         latents = (
-            model.generate_ddim(states_np.shape[0], infos=th.Tensor(states_np))
+            model.generate_ddim(
+                states_np.shape[0], infos=th.Tensor(states_np), speedup_fac=1
+            )
             .detach()
             .cpu()
             .numpy()

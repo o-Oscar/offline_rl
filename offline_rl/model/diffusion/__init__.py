@@ -110,12 +110,14 @@ class DiffusionNet(BaseModel):
         return xts_th
 
     def embed(self, t: np.ndarray, feature_nb: int, axis: int):
+        assert feature_nb % 2 == 0
+
         to_return = []
-        for i in range(feature_nb):
+        for i in range(feature_nb // 2):
             phase = t * np.pi * (2**i)
             to_return.append(np.sin(phase))
             to_return.append(np.cos(phase))
 
         if np.array(t).shape == ():
             return np.array(to_return)
-        return np.concatenate(to_return, axis=axis)
+        return np.stack(to_return, axis=axis)

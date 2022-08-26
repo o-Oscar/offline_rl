@@ -80,8 +80,6 @@ class BlowUp(Node):
 
     def _node_forward(self, **inputs):
         input = self.parent(**inputs)
-        print(self.parent.numeric_shape)
-        input = input.view(self.parent.numeric_shape)
         return input + th.zeros(self.numeric_shape)
 
 
@@ -183,10 +181,10 @@ class Linear(Node):
 
     def _node_forward(self, **inputs):
         input = self.parent(**inputs)
-        input = th.permute(input, self.first_perm)
-        result = self.layer(input)
+        input_ = th.permute(input, self.first_perm)
+        result = self.layer(input_)
         result = th.permute(result, self.second_perm)
-        return result
+        return result + input
 
 
 class ReLU(Node):
